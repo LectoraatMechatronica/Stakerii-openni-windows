@@ -32,6 +32,11 @@
 // Globals
 //---------------------------------------------------------------------------
 XnSkeletonJointPosition headPosition;
+int oldX;
+int oldY;
+int oldZ;
+int playerId = 1;
+
 
 xn::Context g_Context;
 xn::ScriptNode g_scriptNode;
@@ -75,6 +80,7 @@ XnBool g_bRecord = false;
 XnBool g_bQuit = false;
 
 void showPosition();
+void selectPlayer(int playeriD);
 
 //---------------------------------------------------------------------------
 // Code
@@ -299,21 +305,54 @@ void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 	case 32: //space key
 		showPosition();
 		break;
+	case '1':
+		selectPlayer(1);
+		break;
+	case '2':
+		selectPlayer(2);
+		break;
+	case '3':
+		selectPlayer(3);
+		break;
+	case '4':
+		selectPlayer(4);
+		break;
+	case '5':
+		selectPlayer(5);
+		break;
 	}
 }
-void showPosition(){
-	int nId = 1;// user 1
-	g_UserGenerator.GetSkeletonCap().GetSkeletonJointPosition(nId, XN_SKEL_HEAD,headPosition);	
+
+void selectPlayer(int player){
+	playerId = player;
+	printf("Selected player %d\n", player);
+}
+void showPosition(){	
+	printf("Showing position for player: %d\n", playerId);
+	g_UserGenerator.GetSkeletonCap().GetSkeletonJointPosition(playerId, XN_SKEL_HEAD,headPosition);
 	int x = headPosition.position.X;
 	int y = headPosition.position.Y;
-	float z = headPosition.position.Z;
-	int confidence = headPosition.fConfidence;
-
-	printf("X: %d, Y: %d, Z: %d, Confidence: %f\n",x,y,z,confidence);
-	if(x==0){
-		printf("rechtdoor of geen persoon gedetecteerd.\n");
+	int z = headPosition.position.Z;
+	float confidence = headPosition.fConfidence;
+	if(x == oldX && y == oldY && z == oldZ){
+		printf("Persoon is waarschijnlijk weggelopen...\n");
 		return;
 	}
+	oldX = x;
+	oldY = y;
+	oldZ = z;
+	printf("X: %d, Y: %d, Z: %d, Confidence: %f\n",x,y,z,confidence);
+	if(y>200){
+		printf("Y: dichtbij\n");
+	}else{
+		printf("Y: ver weg\n");
+	}
+	if(z>2300){
+		printf("Z: ver weg\n");
+	}else{
+		printf("Z: dichtbij \n");
+	}
+	
 	if(x>0){//naar links, coordinatensysteem is waarschijnlijk gespiegeld, net zoals het beeld van de kinect.
 		if(x>500)
 			printf("naar links!\n");
