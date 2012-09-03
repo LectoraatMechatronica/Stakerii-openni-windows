@@ -37,6 +37,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CLRSupport>false</CLRSupport>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -172,6 +173,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(OPEN_NI_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -190,10 +192,12 @@
   <ItemGroup>
     <ClCompile Include=".\main.cpp" />
     <ClCompile Include=".\SceneDrawer.cpp" />
+    <ClCompile Include="Serial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\SceneDrawer.h" />
     <ClInclude Include="..\Res\Resource-OpenNI.h" />
+    <ClInclude Include="Serial.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Res\mainicon.ico" />
@@ -202,7 +206,6 @@
     <ResourceCompile Include="..\Res\OpenNI.rc" />
   </ItemGroup>
   <ItemGroup>
-    
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

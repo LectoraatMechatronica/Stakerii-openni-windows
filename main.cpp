@@ -27,6 +27,7 @@
 #include <XnCppWrapper.h>
 #include "SceneDrawer.h"
 #include <XnPropNames.h>
+#include <Serial.h>
 
 //---------------------------------------------------------------------------
 // Globals
@@ -399,7 +400,10 @@ void glInit (int * pargc, char ** argv)
 int main(int argc, char **argv)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-
+	
+	printf("Starting Serial test...\n");
+	test();
+	printf("Serial test completed.\n");
 	if (argc > 1)
 	{
 		nRetVal = g_Context.Init();
