@@ -201,6 +201,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Res\mainicon.ico" />
+    <None Include="WForm.mfcribbon-ms" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Res\OpenNI.rc" />
