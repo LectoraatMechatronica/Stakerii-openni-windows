@@ -14,6 +14,7 @@ class PSerial
 
   public:
 	  int serial_send(CString data);
+	  char * serialRead();
 	  PSerial();
 	  ~PSerial();
 	  int Connect(TCHAR * commport,long baudrate,BYTE bytesize,BYTE parity,BYTE stopbits);
@@ -24,6 +25,7 @@ private:
 	CString filetext;
 	DCB dcb;
 	HANDLE hCom;
+	BOOL serialRead(BYTE &b);
 };
 
 #endif

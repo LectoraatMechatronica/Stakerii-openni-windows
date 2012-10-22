@@ -19,6 +19,16 @@
 *  along with OpenNI. If not, see <http://www.gnu.org/licenses/>.           *
 *                                                                           *
 ****************************************************************************/
+/*
+This version is modified for control of the stalker II robot.
+Features added:
+-	Get coordinates from the selected XnSceletonPosition
+-	Translates the coordinates and prepares them for transmission to the robot
+-	Sends the directions to the robot for execution (using a simple Serial protocol for robotic communication)
+-	Receives and processes feedback data from the robotic platform and displays this in the GUI
+
+11-10-2012 <d.vollmar@fontys.nl>
+*/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -57,17 +67,17 @@ XnBool g_bDrawSkeleton = TRUE;
 XnBool g_bPrintID = TRUE;
 XnBool g_bPrintState = TRUE;
 
-XnBool g_bPrintFrameID = FALSE;
-XnBool g_bMarkJoints = FALSE;
+XnBool g_bPrintFrameID = TRUE;
+XnBool g_bMarkJoints = TRUE;
 
 #ifndef USE_GLES
 #if (XN_PLATFORM == XN_PLATFORM_MACOSX)
-	#include <GLUT/glut.h>
+#include <GLUT/glut.h>
 #else
-	#include <GL/glut.h>
+#include <GL/glut.h>
 #endif
 #else
-	#include "opengles.h"
+#include "opengles.h"
 #endif
 
 #ifdef USE_GLES
@@ -110,6 +120,8 @@ int anglefilter;
 int speedfilter;
 
 int remote_movemode;
+int LOCK_POINT;//int lock point, help variable for lock point changes
+bool mode_Perpendicular;//camera in line with width when false, in line with length when true
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
@@ -179,11 +191,11 @@ void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability
 	{
 		// Calibration failed
 		printf("%d Calibration failed for user %d\n", epochTime, nId);
-        if(eStatus==XN_CALIBRATION_STATUS_MANUAL_ABORT)
-        {
-            printf("Manual abort occured, stop attempting to calibrate!");
-            return;
-        }
+		if(eStatus==XN_CALIBRATION_STATUS_MANUAL_ABORT)
+		{
+			printf("Manual abort occured, stop attempting to calibrate!");
+			return;
+		}
 		if (g_bNeedPose)
 		{
 			g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
@@ -241,15 +253,16 @@ void LoadCalibration()
 // this function is called each frame
 void glutDisplay (void)
 {
-	if(automatic_display_counter++ == 5)
+	automatic_display_counter++;
+	if(automatic_display_counter == 5)
 	{
-		if(manual_control!=TRUE)
+		if(!manual_control)
 		{
 			getPosition();
 		}
 		else
 		{
-			if(remote_movemode!=TRUE)
+			if(!remote_movemode)
 			{
 				move0(speed,angle);
 			}
@@ -265,17 +278,17 @@ void glutDisplay (void)
 
 	glMatrixMode(GL_MODELVIEW);
 	/*Modes:
-		 GL_MODELVIEW
-		Applies subsequent matrix operations to the modelview matrix stack.
+	GL_MODELVIEW
+	Applies subsequent matrix operations to the modelview matrix stack.
 
-		GL_PROJECTION 'DEFAULT
-		Applies subsequent matrix operations to the projection matrix stack.
+	GL_PROJECTION 'DEFAULT
+	Applies subsequent matrix operations to the projection matrix stack.
 
-		GL_TEXTURE
-		Applies subsequent matrix operations to the texture matrix stack.
+	GL_TEXTURE
+	Applies subsequent matrix operations to the texture matrix stack.
 
-		GL_COLOR
-		Applies subsequent matrix operations to the color matrix stack.
+	GL_COLOR
+	Applies subsequent matrix operations to the color matrix stack.
 	*/
 	glPushMatrix();
 	glLoadIdentity();
@@ -298,10 +311,10 @@ void glutDisplay (void)
 		g_Context.WaitOneUpdateAll(g_UserGenerator);
 	}
 
-		// Process the data
-		g_DepthGenerator.GetMetaData(depthMD);
-		g_UserGenerator.GetUserPixels(0, sceneMD);
-		DrawDepthMap(depthMD, sceneMD);
+	// Process the data
+	g_DepthGenerator.GetMetaData(depthMD);
+	g_UserGenerator.GetUserPixels(0, sceneMD);
+	DrawDepthMap(depthMD, sceneMD);
 
 #ifndef USE_GLES
 	glutSwapBuffers();
@@ -323,54 +336,47 @@ void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 {
 	switch (key)
 	{
-	case 27:
+	case 27: //esc key
 		CleanupExit();
 
-	case 'w':// W
-			if(manual_control==TRUE)
+	case 'w':// w
+		if(manual_control)
+		{
+			if(speed==0)
 			{
-				if(speed==0)
-				{
-					speed=MIN_SPEED;
-				}
-				else
-				speed+=4;
-				printf("new speed: %i\n",speed);
+				speed=MIN_SPEED;
 			}
+			else
+				speed+=4;
+			printf("new speed: %i\n",speed);
+		}
 		break;
 	case 'a':// a
-			if(manual_control==TRUE)
-			{
-				angle-=1;
-				if(angle<-7)angle=-7;
-			}
+		if(manual_control)
+		{
+			angle-=1;
+			if(angle<-7)angle=-7;
+		}
 		break;
 	case 'd':
-			if(manual_control==TRUE)
-			{
-					angle+=1;
-				if(angle>7)angle=7;
-			}
+		if(manual_control)
+		{
+			angle+=1;
+			if(angle>7)angle=7;
+		}
 		break;
 	case 't':
-			if(manual_control==TRUE)
-			{
-				if(remote_movemode!=TRUE)
-				{
-					remote_movemode=TRUE;
-				}
-				else
-				{
-					remote_movemode=FALSE;
-				}
-			}
+		if(manual_control)
+		{
+			remote_movemode = !remote_movemode;				
+		}
 		break;
 	case 'm':
-		if(manual_control==TRUE)
+		if(manual_control)
 		{
 			manual_control=FALSE;
 			printf("Manual Mode de-activated.\n");
-			printf("Keys:\nm - Press m to enable Manual Mode,\nb - draw background,\nx - draw pixels,\ns - draw skeleton,\ni - print label,\nl - toggle print (ID / ID + STATE),\nf - print frameID,\nj - Mark joints,\np - pause,\nr - start device,\ne - stop device,\n1 - select player 1,\nn - selec...      n\n");
+			printf("Keys:\nm - Press m to enable Manual Mode,\nb - draw background,\nx - draw pixels,\ns - draw skeleton,\ni - print label,\nl - toggle print (ID / ID + STATE),\nf - print frameID,\nj - Mark joints,\np - pause,\nr - start device,\ne - stop device,\n` - switch Perpendicular mode,\n1 - select player 1,\nn - selec...      n\n");
 		}
 		else
 		{
@@ -388,20 +394,20 @@ void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 		g_bDrawPixels = !g_bDrawPixels;
 		break;
 	case 's':
-		 if(manual_control==TRUE)
-		 {
-				if(speed==0)
-				{
-					speed=-MIN_SPEED;
-				}
-				else
+		if(manual_control)
+		{
+			if(speed==0)
+			{
+				speed=-MIN_SPEED;
+			}
+			else
 				speed-=5;
 			printf("new speed: %i\n",speed);
-		 }
-		 else// Draw Skeleton?
-		 {
+		}
+		else// Draw Skeleton?
+		{
 			g_bDrawSkeleton = !g_bDrawSkeleton;
-		 }
+		}
 		break;
 	case 'i':
 		// Print label?
@@ -423,12 +429,16 @@ void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 		g_bPause = !g_bPause;
 		break;
 	case'r':
-		comm.serial_send("$1,");
+		comm.serial_send("$1");
 		speed=0;
 		angle=0;
 		break;
 	case'e':
-		comm.serial_send("$0,");
+		comm.serial_send("$0");
+		break;
+	case 'q':
+		mode_Perpendicular=!mode_Perpendicular;
+		printf("Set mode_Perpendicular switched\n");
 		break;
 	case 'S':
 		SaveCalibration();
@@ -437,12 +447,12 @@ void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 		LoadCalibration();
 		break;
 	case 32: //space key
-			if(remote_movemode!=TRUE)
-			{
-				move0(0,angle);
-			}
-			else
-				move1(0,angle);
+		if(!remote_movemode)
+		{
+			move0(0,angle);
+		}
+		else
+			move1(0,angle);
 		speed=0;//reset speed variable
 		automatic_display_counter=-5;//prevent loop from triggering
 		//showPosition();
@@ -483,46 +493,78 @@ void selectPlayer(int player){
 }
 
 void getPosition(){	
-	
-	g_UserGenerator.GetSkeletonCap().GetSkeletonJointPosition(playerId, XN_SKEL_HEAD,headPosition);
+	LOCK_POINT = XN_SKEL_NECK;
+	g_UserGenerator.GetSkeletonCap().GetSkeletonJointPosition(playerId,(XnSkeletonJoint) LOCK_POINT,headPosition);
 	int x = headPosition.position.X;
 	int y = headPosition.position.Y;
 	int z = headPosition.position.Z;
-	
+
 	int confidence = headPosition.fConfidence;
 
+	//printf("speed: %d, angle: %d,confidence %d, x:%i, y:%i, z:%i\n",speed,angle,confidence,x,y,z);
+
 	if(x == oldX && y == oldY && z == oldZ){
-			return;//probably gone
+		return;//tracked person is probably gone
 	}
 
 	oldX = x;
 	oldY = y;
 	oldZ = z;
 
-	x+=510;
-	z-=1000;
+	int max_z;
+	int max_x;
+	int help;
+
+	switch(LOCK_POINT)
+	{
+	case XN_SKEL_HEAD:
+		{
+			x+=510;
+			max_x=1050;
+			z-=1000;
+			max_z=3700;
+			break;
+		}
+	case XN_SKEL_NECK:
+		{
+			x+=1050;
+			max_x=1485;
+			z-=1000;
+			max_z=3391;
+			break;
+		}
+	}
+	if(mode_Perpendicular)
+	{
+		help=x;
+		x=z;
+		z=help;
+		help=max_x;
+		max_x=max_z;
+		max_z=help;
+	}
 
 	if(z<0){
-			speed=0;
-			speedfilter=0;
-	}else if(z>3600)
+		speed=0;
+		speedfilter=0;
+	}else if(z>max_z)
 	{
 		speed=0;//failsafe
 	}
 	else//if z is bigger than zero and z and smaller than 3700
 	{
-		if(z<500)
+		if(z<300)
 		{
 			speed=-15;
 		}
 		else
-		speed=((100.00/3400.00) * (z-500));//automatic cast to integer from float, round
+			speed=((100.00/(max_z-500)) * (z-300));//automatic cast to integer from float, round
 	}
 	if(speedfilter!=speed)//there is a speed change!
 	{
-		if(speed-speedfilter>20)//if delta speed is bigger than maximum allowed
+		if(speed-speedfilter>15)//if delta speed is bigger than maximum allowed
 		{//increase in speed
-			speedfilter+=20;
+			speedfilter+=15;
 			speed=speedfilter;
 		}
 		else if(speedfilter-speed>30)//if delta speed is bigger than maximum allowed
@@ -538,28 +580,28 @@ void getPosition(){
 		angle=MAX_ANGLE;//MAXIMUM
 	}
 	else
-	if(x>1050)//out of screen, right side, fail-safe value
-	{
-		angle=MIN_ANGLE;//MINIMUM
-	}
-	else//if x is larger than zero and smaller than 1050
-	{
-		//calculate new angle
-		angle=(MAX_ANGLE - (((MAX_ANGLE-MIN_ANGLE)/1050.00) * x));//automatic cast to integer from float, round
-	}
+		if(x>max_x)//out of screen, right side, fail-safe value
+		{
+			angle=MIN_ANGLE;//MINIMUM
+		}
+		else//if x is larger than zero and smaller than 1050
+		{
+			//calculate new angle
+			angle=(MAX_ANGLE - (((MAX_ANGLE-MIN_ANGLE)/(float)max_x) * x));//automatic cast to integer from float, round
+		}
 
-	if(confidence == 0)
-	{
-		speed=0;
-		speedfilter=0;
-		//printf("confidence-triggered reset");
-		//move0(0,angle);//stop moving
-		//return;//not confident enough to act on it, stop moving!
-	}
-	else
-		printf("speed: %d, angle: %d,confidence %d, x:%i, y:%i, z:%i\n",speed,angle,confidence,x,y,z);
+		if(confidence == 0)
+		{
+			speed=0;
+			speedfilter=0;
+			//printf("confidence-triggered reset");
+			//move0(0,angle);//stop moving
+			//return;//not confident enough to act on it, stop moving!
+		}
+		else
+			//printf("speed: %d, angle: %d,confidence %d, x:%i, y:%i, z:%i\n",speed,angle,confidence,x,y,z);
 
-	move0(speed,angle);
+			move0(speed,angle);
 
 }
 
@@ -572,7 +614,7 @@ void glInit (int * pargc, char ** argv)
 
 	comm.Connect( TEXT("COM9"),CBR_115200,8, NOPARITY, ONESTOPBIT);
 	Sleep(100);//give time to connect and create window
-	printf("Keys:\nm - Press m to enable Manual Mode,\nb - draw background,\nx - draw pixels,\ns - draw skeleton,\ni - print label,\nl - toggle print (ID / ID + STATE),\nf - print frameID,\nj - Mark joints,\np - pause,\nr - start device,\ne - stop device,\n1 - select player 1,\nn - selec...      n\n");
+	printf("Keys:\nm - Press m to enable Manual Mode,\nb - draw background,\nx - draw pixels,\ns - draw skeleton,\ni - print label,\nl - toggle print (ID / ID + STATE),\nf - print frameID,\nj - Mark joints,\np - pause,\nr - start device,\ne - stop device,\n` - switch Perpendicular mode,\n1 - select player 1,\nn - selec...      n\n");
 	//glutFullScreen();
 	glutSetCursor(GLUT_CURSOR_NONE);
 
@@ -593,15 +635,15 @@ void glInit (int * pargc, char ** argv)
 
 #define CHECK_RC(nRetVal, what)										\
 	if (nRetVal != XN_STATUS_OK)									\
-	{																\
-		printf("%s failed: %s\n", what, xnGetStatusString(nRetVal));\
-		return nRetVal;												\
-	}
+{																\
+	printf("%s failed: %s\n", what, xnGetStatusString(nRetVal));\
+	return nRetVal;												\
+}
 
 int main(int argc, char **argv)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 
 	if (argc > 1)
 	{
@@ -746,70 +788,70 @@ int PSerial::Connect( TCHAR * commport, long baudrate, BYTE bytesize, BYTE parit
 {
 	TCHAR * pcCommPort = commport; //  Most systems have a COM1 port
 
-   //  Open a handle to the specified com port.
-   hCom = CreateFile( pcCommPort,
-                      GENERIC_READ | GENERIC_WRITE,
-                      0,      //  must be opened with exclusive-access
-                      NULL,   //  default security attributes
-                      OPEN_EXISTING, //  must use OPEN_EXISTING
-                      0,      //  not overlapped I/O
-                      NULL ); //  hTemplate must be NULL for comm devices
+	//  Open a handle to the specified com port.
+	hCom = CreateFile( pcCommPort,
+		GENERIC_READ | GENERIC_WRITE,
+		0,      //  must be opened with exclusive-access
+		NULL,   //  default security attributes
+		OPEN_EXISTING, //  must use OPEN_EXISTING
+		0,      //  not overlapped I/O
+		NULL ); //  hTemplate must be NULL for comm devices
 
-   if (hCom == INVALID_HANDLE_VALUE) 
-   {
-       //  Handle the error.
-       printf ("CreateFile failed with error %d.\n", GetLastError());
-       return 4;
-   }
+	if (hCom == INVALID_HANDLE_VALUE) 
+	{
+		//  Handle the error.
+		printf ("CreateFile failed with error %d.\n", GetLastError());
+		return 4;
+	}
 
-   //  Initialize the DCB structure.
-   SecureZeroMemory(&dcb, sizeof(DCB));
-   dcb.DCBlength = sizeof(DCB);
+	//  Initialize the DCB structure.
+	SecureZeroMemory(&dcb, sizeof(DCB));
+	dcb.DCBlength = sizeof(DCB);
 
-   //  Build on the current configuration by first retrieving all current
-   //  settings.
-   fSuccess = GetCommState(hCom, &dcb);
+	//  Build on the current configuration by first retrieving all current
+	//  settings.
+	fSuccess = GetCommState(hCom, &dcb);
 
-   if (!fSuccess) 
-   {
-      //  Handle the error.
-      printf ("GetCommState failed with error %d.\n", GetLastError());
-      return 3;
-   }
+	if (!fSuccess) 
+	{
+		//  Handle the error.
+		printf ("GetCommState failed with error %d.\n", GetLastError());
+		return 3;
+	}
 
-   //PrintCommState(dcb);       //  Output to console
+	//PrintCommState(dcb);       //  Output to console
 
-   //  Fill in some DCB values and set the com state: 
-   //  57,500 bps, 8 data bits, no parity, and 1 stop bit.
-   dcb.BaudRate = baudrate;     //  baud rate
-   dcb.ByteSize = bytesize;             //  data size, xmit and rcv
-   dcb.Parity   = parity;      //  parity bit
-   dcb.StopBits = stopbits;    //  stop bit
+	//  Fill in some DCB values and set the com state: 
+	//  57,500 bps, 8 data bits, no parity, and 1 stop bit.
+	dcb.BaudRate = baudrate;     //  baud rate
+	dcb.ByteSize = bytesize;             //  data size, xmit and rcv
+	dcb.Parity   = parity;      //  parity bit
+	dcb.StopBits = stopbits;    //  stop bit
 
-   fSuccess = SetCommState(hCom, &dcb);
+	fSuccess = SetCommState(hCom, &dcb);
 
-   if (!fSuccess) 
-   {
-      //  Handle the error.
-      printf ("SetCommState failed with error %d.\n", GetLastError());
-      return 2;
-   }
+	if (!fSuccess) 
+	{
+		//  Handle the error.
+		printf ("SetCommState failed with error %d.\n", GetLastError());
+		return 2;
+	}
 
-   //  Get the comm config again.
-   fSuccess = GetCommState(hCom, &dcb);
+	//  Get the comm config again.
+	fSuccess = GetCommState(hCom, &dcb);
 
-   if (!fSuccess) 
-   {
-      //  Handle the error.
-      printf ("GetCommState failed with error %d.\n", GetLastError());
-      return 1;
-   }
- 
-   //PrintCommState(dcb);       //  Output to console
+	if (!fSuccess) 
+	{
+		//  Handle the error.
+		printf ("GetCommState failed with error %d.\n", GetLastError());
+		return 1;
+	}
 
-   _tprintf (TEXT("Serial port %s successfully reconfigured.\n"), pcCommPort);
+	//PrintCommState(dcb);       //  Output to console
 
-   return (0);
+	_tprintf (TEXT("Serial port %s successfully reconfigured.\n"), pcCommPort);
+
+	return (0);
 }
 
 PSerial::~PSerial(){
@@ -823,23 +865,62 @@ int PSerial::Close()
 int PSerial::serial_send(CString data)
 {
 	DWORD received;
-   for (int i = 0; i < data.GetLength(); ++i)
-   {
-	   //printf("%c",data.GetAt(i));
-	   WriteFile(PSerial::hCom, (CString) data.GetAt(i),1,&received,NULL);
-   }
-   WriteFile(PSerial::hCom,"\r",1,&received,NULL);
-   return 1;
+	for (int i = 0; i < data.GetLength(); ++i)
+	{
+		//printf("%c",data.GetAt(i));
+		WriteFile(PSerial::hCom, (CString) data.GetAt(i),1,&received,NULL);
+	}
+	WriteFile(PSerial::hCom,"\r",1,&received,NULL);
+	return 1;
 }
+
+// Reads a single byte from the serial buffer. Returns true if a byte was read.
+// the BYTE &b is set with the byte from the serial buffer. If the buffer was empty, the byte will be set to 0.
+// todo: checken of het blocked-io is, eventueel in een aparte thread zetten
+BOOL PSerial::serialRead(BYTE &b){
+	BYTE rx;
+	b=0;
+	DWORD dwBytesTransferred=0;
+
+	if (ReadFile (hCom, &rx, 1, &dwBytesTransferred, 0)){
+		if (dwBytesTransferred == 1){
+			b=rx;
+			return true;
+		}
+	}
+	return false;
+}
+
+char * PSerial::serialRead(){
+	char r[64];
+	int p = 0;
+	byte b = 0;	
+	while(serialRead((b))){
+		if(p == 64){
+			p--;//prevent index out of bounds
+			break;
+		}
+		r[p] = (char) b;		 
+		p++;
+	}
+	//mark eos
+	r[p] = '\0';
+	//return type char * instead of r[]
+	char *ret;
+	ret = r;
+	return ret;
+}
+
+
 
 void PrintCommState(DCB dcb)
 {
-    //  Print some of the DCB structure values
-    _tprintf( TEXT("\nBaudRate = %d, ByteSize = %d, Parity = %d, StopBits = %d\n"), 
-              dcb.BaudRate, 
-              dcb.ByteSize, 
-              dcb.Parity,
-              dcb.StopBits );
+	//  Print some of the DCB structure values
+	_tprintf( TEXT("\nBaudRate = %d, ByteSize = %d, Parity = %d, StopBits = %d\n"), 
+		dcb.BaudRate, 
+		dcb.ByteSize, 
+		dcb.Parity,
+		dcb.StopBits );
 }
 
 int move0(int speedx,int direction)
@@ -869,8 +950,8 @@ int move1(int speedx,int direction)
 		speedx=MIN_SPEED;//minimum speed
 	}
 	else
-	if(speedx>-MIN_SPEED && speed<0)
-		speedx=-MIN_SPEED;//minimum speed
+		if(speedx>-MIN_SPEED && speed<0)
+			speedx=-MIN_SPEED;//minimum speed
 	sprintf_s(buffer, "$3,%i,%i\n",speedx,direction);
 	//printf("%s",buffer);
 	comm.serial_send(buffer);

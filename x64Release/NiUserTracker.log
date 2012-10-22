@@ -1,27 +1,17 @@
-﻿Build started 4-10-2012 15:53:19.
-     1>Project "C:\Users\henk\Desktop\Samples\NiUserTracker\NiUserTracker.vcxproj" on node 2 (build target(s)).
-     1>InitializeBuildStatus:
-         Creating "x64Release\NiUserTracker.unsuccessfulbuild" because "AlwaysCreate" was specified.
-       ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files\OpenNI\Include" /I. /Zi /nologo /W4 /WX- /MP /O2 /Oi /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64Release\\" /Fd"x64Release\vc100.pdb" /Gd /TP /errorReport:prompt .\main.cpp /MP 
+﻿Build started 22-10-2012 15:23:33.
+     1>Project "C:\Users\871641\Fontys Mechatronica\Projects\Stalker II\c++  STALKER\NiUserTracker\NiUserTracker.vcxproj" on node 2 (Rebuild target(s)).
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Program Files (x86)\OpenNI\Include" /I. /Zi /nologo /W4 /WX- /MP /O2 /Oi /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64Release\\" /Fd"x64Release\vc100.pdb" /Gd /TP /errorReport:prompt .\main.cpp .\SceneDrawer.cpp Gui.cpp Serial.cpp /MP 
          main.cpp
-       ResourceCompile:
-         All outputs are up-to-date.
-       Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"../Bin64/Release\NiUserTracker64.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Program Files\OpenNI\Lib64" /LIBPATH:./Libs openNI64.lib glut64.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64Release\NiUserTracker64.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\henk\Desktop\Samples\Bin64\Release\NiUserTracker64.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"../Bin64/Release\NiUserTracker64.lib" /MACHINE:X64 x64Release\OpenNI.res
-         x64Release\main.obj
-         x64Release\SceneDrawer.obj
-         x64Release\Serial.obj
-         Generating code
-         Finished generating code
-         NiUserTracker.vcxproj -> C:\Users\henk\Desktop\Samples\NiUserTracker\../Bin64/Release\NiUserTracker64.exe
-       Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"../Bin64/Release\NiUserTracker64.exe;#1" /manifest x64Release\NiUserTracker64.exe.intermediate.manifest
-       FinalizeBuildStatus:
-         Deleting file "x64Release\NiUserTracker.unsuccessfulbuild".
-         Touching "x64Release\NiUserTracker.lastbuildstate".
-     1>Done Building Project "C:\Users\henk\Desktop\Samples\NiUserTracker\NiUserTracker.vcxproj" (build target(s)).
+         SceneDrawer.cpp
+         Gui.cpp
+         Serial.cpp
+     1>C:\Program Files (x86)\OpenNI\Include\XnCppWrapper.h(865): warning C4366: The result of the unary '&' operator may be unaligned
+     1>C:\Program Files (x86)\OpenNI\Include\XnCppWrapper.h(865): warning C4366: The result of the unary '&' operator may be unaligned
+         c:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /D _UNICODE /D UNICODE /l"0x0409" /I"C:\Program Files (x86)\OpenNI\Include" /nologo /fo"x64Release\OpenNI.res" ..\Res\OpenNI.rc 
+     1>RC : fatal error RC1110: could not open ..\Res\OpenNI.rc
+         
+     1>Done Building Project "C:\Users\871641\Fontys Mechatronica\Projects\Stalker II\c++  STALKER\NiUserTracker\NiUserTracker.vcxproj" (Rebuild target(s)) -- FAILED.
 
-Build succeeded.
+Build FAILED.
 
-Time Elapsed 00:00:05.83
+Time Elapsed 00:00:07.03

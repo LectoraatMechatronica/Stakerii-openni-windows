@@ -22,6 +22,7 @@
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
+
 #include <math.h>
 #include "SceneDrawer.h"
 
@@ -193,12 +194,10 @@ void DrawJoint(XnUserID player, XnSkeletonJoint eJoint)
 		printf("not tracked!\n");
 		return;
 	}
-
 	if (!g_UserGenerator.GetSkeletonCap().IsJointActive(eJoint))
 	{
 		return;
 	}
-
 	XnSkeletonJointPosition joint;
 	g_UserGenerator.GetSkeletonCap().GetSkeletonJointPosition(player, eJoint, joint);
 
@@ -206,7 +205,6 @@ void DrawJoint(XnUserID player, XnSkeletonJoint eJoint)
 	{
 		return;
 	}
-
 	XnPoint3D pt;
 	pt = joint.position;
 
@@ -398,7 +396,7 @@ void DrawDepthMap(const xn::DepthMetaData& dmd, const xn::SceneMetaData& smd)
 
 	glEnable(GL_TEXTURE_2D);
 	DrawTexture(dmd.XRes(),dmd.YRes(),0,0);	
-	glDisable(GL_TEXTURE_2D);
+	//glDisable(GL_TEXTURE_2D);
 
 	char strLabel[50] = "";
 	XnUserID aUsers[15];
@@ -407,6 +405,7 @@ void DrawDepthMap(const xn::DepthMetaData& dmd, const xn::SceneMetaData& smd)
 	for (int i = 0; i < nUsers; ++i)
 	{
 #ifndef USE_GLES
+	
 		if (g_bPrintID)
 		{
 			XnPoint3D com;
@@ -444,6 +443,8 @@ void DrawDepthMap(const xn::DepthMetaData& dmd, const xn::SceneMetaData& smd)
 			glPrintString(GLUT_BITMAP_HELVETICA_18, strLabel);
 		}
 #endif
+		
+			
 		if (g_bDrawSkeleton && g_UserGenerator.GetSkeletonCap().IsTracking(aUsers[i]))
 		{
 			glColor4f(1-Colors[aUsers[i]%nColors][0], 1-Colors[aUsers[i]%nColors][1], 1-Colors[aUsers[i]%nColors][2], 1);
@@ -451,6 +452,8 @@ void DrawDepthMap(const xn::DepthMetaData& dmd, const xn::SceneMetaData& smd)
 			// Draw Joints
 			if (g_bMarkJoints)
 			{
+				//printf("SKELETON DRAW: %s, %s, %s\n",(g_bDrawSkeleton)?"true":"false",(g_UserGenerator.GetSkeletonCap().IsTracking(aUsers[i]))?"true":"false",(g_bMarkJoints)?"true":"false");
+
 				// Try to draw all joints
 				DrawJoint(aUsers[i], XN_SKEL_HEAD);
 				DrawJoint(aUsers[i], XN_SKEL_NECK);

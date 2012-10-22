@@ -192,19 +192,22 @@
   <ItemGroup>
     <ClCompile Include=".\main.cpp" />
     <ClCompile Include=".\SceneDrawer.cpp" />
+    <ClCompile Include="Gui.cpp" />
     <ClCompile Include="Serial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\SceneDrawer.h" />
     <ClInclude Include="..\Res\Resource-OpenNI.h" />
+    <ClInclude Include="Gui.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Serial.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Res\mainicon.ico" />
-    <None Include="WForm.mfcribbon-ms" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Res\OpenNI.rc" />
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
